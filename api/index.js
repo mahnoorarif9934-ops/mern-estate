@@ -11,9 +11,6 @@ dotenv.config();
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-const MONGO = process.env.MONGO;
-
 /* ================= MIDDLEWARE ================= */
 
 app.use(cors());
@@ -28,12 +25,6 @@ app.get("/", (req, res) => {
   });
 });
 
-/* ================= AUTH ROUTES ================= */
-
-app.use("/api/auth", authRouter);
-
-/* ================= USER ROUTES ================= */
-
 /* ================= API ROUTES ================= */
 
 app.use("/api/auth", authRouter);
@@ -42,29 +33,39 @@ app.use("/api/property", propertyRouter);
 
 /* ================= DATABASE ================= */
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+
   try {
-    await mongoose.connect(MONGO);
+    await mongoose.connect(process.env.MONGO);
+
+    isConnected = true;
 
     console.log("Connected to MongoDB!");
   } catch (error) {
     console.error("MongoDB connection failed:");
     console.error(error.message);
 
-    process.exit(1);
+    throw error;
   }
 };
 
-/* ================= START SERVER ================= */
+/* ================= VERCEL HANDLER ================= */
 
-const startServer = async () => {
-  await connectDB();
-
-  app.listen(PORT, () => {
-    console.log(
-      `Server running on http://localhost:${PORT}`
-    );
-  });
+const handler = async (req, res) => {
+  try {
+    await connectDB();
+    return app(req, res);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed.",
+    });
+  }
 };
 
-startServer();
+export default handler;
