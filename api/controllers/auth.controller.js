@@ -39,7 +39,8 @@ export const signup = async (req, res) => {
       });
     }
 
-    const hashedPassword = bcryptjs.hashSync(password, 10);
+    // UPDATED: bcryptjs.hashSync ki jagah async hash function
+    const hashedPassword = await bcryptjs.hash(password, 10);
 
     const newUser = new User({
       username: cleanUsername,
@@ -89,10 +90,8 @@ export const signin = async (req, res) => {
       });
     }
 
-    const passwordMatch = bcryptjs.compareSync(
-      password,
-      user.password
-    );
+    // UPDATED: bcryptjs.compareSync ki jagah async compare function
+    const passwordMatch = await bcryptjs.compare(password, user.password);
 
     if (!passwordMatch) {
       return res.status(401).json({
